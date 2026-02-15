@@ -1,53 +1,63 @@
-
 import React from 'react';
 import { useStore } from './store/useStore';
-import Canvas from './components/Editor/Canvas';
-import FloatingToolbar from './components/Editor/FloatingToolbar';
-import ContextualModal from './components/Editor/ContextualModal';
-import PageSettingsModal from './components/Editor/PageSettingsModal';
+import ProfileView from './components/ProfileView';
+import ProfileEditor from './components/ProfileEditor';
+import StoryViewer from './components/StoryViewer';
+import ActionModal from './components/ActionModal';
 import Dashboard from './components/Dashboard/Dashboard';
+import Onboarding from './components/Onboarding/Onboarding';
+import { Eye, EyeOff } from 'lucide-react';
 
 const App: React.FC = () => {
-  const { selectedBlockId, selectBlock, isSettingsOpen, view } = useStore();
+  const { view, setView, activeStoryIndex, activeHighlightId, hasCompletedOnboarding } = useStore();
 
-  const handleGlobalClick = (e: React.MouseEvent) => {
-    // Only deselect if the click is on the background area and not on a block or modal
-    if (selectedBlockId || isSettingsOpen) {
-      selectBlock(null);
+  if (!hasCompletedOnboarding) {
+    return <Onboarding />;
+  }
+
+  const renderContent = () => {
+    switch (view) {
+      case 'public': return <ProfileView />;
+      case 'preview': return <ProfileView />;
+      case 'admin': return <ProfileEditor />;
+      case 'dashboard': return <Dashboard />;
+      default: return <ProfileView />;
     }
   };
 
   return (
-    <div 
-      className="flex flex-col h-screen w-screen bg-white relative overflow-hidden" 
-      onClick={handleGlobalClick}
-    >
-      {/* Workspace Area - Full Width */}
-      <div className="flex-1 flex relative z-10 overflow-hidden">
+    <div className="min-h-screen bg-slate-50 overflow-x-hidden font-poppins relative">
+      {renderContent()}
+      
+      {/* Global Overlays */}
+      {activeStoryIndex !== null && <StoryViewer />}
+      {activeHighlightId !== null && <ActionModal />}
+      
+      {/* Navigation Switcher Button (Float) */}
+      <div className="fixed bottom-6 right-6 z-[200] flex flex-col gap-3 items-end">
         
-        {/* Main Content Container - Always Full Width */}
-        <div 
-          className="w-full h-full bg-white flex flex-col overflow-hidden relative"
-          onClick={(e) => {
-            // Prevent deselecting when clicking inside the site preview
-            e.stopPropagation();
-          }}
-        >
-          {/* Main Content Switcher */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth no-scrollbar overscroll-contain bg-white relative flex flex-col h-full">
-             {view === 'canvas' ? <Canvas /> : <Dashboard />}
-          </div>
-        </div>
-      </div>
+        {/* Preview Toggle */}
+        {(view === 'public' || view === 'preview') && (
+             <button 
+                onClick={() => setView(view === 'preview' ? 'public' : 'preview')}
+                className={`w-12 h-12 rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 ${view === 'preview' ? 'bg-slate-900 text-white' : 'bg-white text-slate-900 border border-slate-100'}`}
+                title={view === 'preview' ? "Exit Preview" : "Preview as Visitor"}
+            >
+                {view === 'preview' ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+        )}
 
-      {/* Editor Overlays - Only visible in Canvas View */}
-      {view === 'canvas' && (
-        <>
-            {selectedBlockId && <ContextualModal />}
-            {isSettingsOpen && <PageSettingsModal />}
-            <FloatingToolbar />
-        </>
-      )}
+        {/* Main Navigation - Hide in Preview Mode */}
+        {view !== 'preview' && (
+            <button 
+              onClick={() => useStore.getState().setView(view === 'public' ? 'admin' : (view === 'admin' ? 'dashboard' : 'public'))}
+              className="bg-black text-white px-6 py-3 rounded-full font-black text-xs uppercase tracking-widest shadow-2xl hover:scale-110 active:scale-95 transition-all flex items-center gap-2"
+            >
+              {view === 'public' ? 'Edit Profile' : 
+               view === 'admin' ? 'Dashboard' : 'View Live'}
+            </button>
+        )}
+      </div>
     </div>
   );
 };

@@ -14,6 +14,8 @@ import FormBlock from '../Blocks/FormBlock';
 import BookingBlock from '../Blocks/BookingBlock';
 import EcommerceBlock from '../Blocks/EcommerceBlock';
 import NavigationBlock from '../Blocks/NavigationBlock';
+import CoverBlock from '../Blocks/CoverBlock';
+import SlotBlock from '../Blocks/SlotBlock';
 
 interface BlockRendererProps {
   block: Block;
@@ -44,6 +46,8 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({ block }) => {
       case 'booking': return <BookingBlock block={block} />;
       case 'ecommerce': return <EcommerceBlock block={block} />;
       case 'navigation': return <NavigationBlock block={block} />;
+      case 'cover': return <CoverBlock block={block} />;
+      case 'slot': return <SlotBlock block={block} />;
       default:
         return (
           <div className="p-12 flex flex-col items-center justify-center border border-dashed border-slate-200 rounded-xl bg-slate-50 text-slate-400 min-h-[100px]">
@@ -64,6 +68,9 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({ block }) => {
   // Conditionally apply width: full unless we are editing the header, where we want natural flow
   const widthClass = editingMode === 'header' ? 'w-auto' : 'w-full';
 
+  // Slot blocks (inside cover) handle their own height/width via flex, don't force w-full if implied by parent flex
+  // But generally w-full is fine.
+  
   return (
     <div 
       id={block.id}
@@ -77,7 +84,7 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({ block }) => {
         selectBlock(block.id);
       }}
     >
-      <div className="w-full pointer-events-auto">
+      <div className="w-full pointer-events-auto h-full">
         {renderBlockContent()}
       </div>
       

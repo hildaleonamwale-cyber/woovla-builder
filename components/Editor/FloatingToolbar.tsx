@@ -23,16 +23,17 @@ import {
   Layers,
   Trash2,
   Check,
-  Edit2
+  Edit2,
+  GalleryHorizontal
 } from 'lucide-react';
 
 const FloatingToolbar: React.FC = () => {
   const { 
     undo, redo, addBlock, toggleSettings, historyIndex, history, selectedBlockId, editingMode, setView,
-    pages, activePageId, setActivePage, addPage, deletePage, updatePageTitle 
+    pages, activePageId, setActivePage, addPage, deletePage, updatePageTitle,
+    isAddMenuOpen, setAddMenuOpen, addMenuParentId
   } = useStore();
   
-  const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
   const [isPagesMenuOpen, setIsPagesMenuOpen] = useState(false);
   const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
 
@@ -48,6 +49,7 @@ const FloatingToolbar: React.FC = () => {
     { type: 'navigation', icon: <Menu className="w-4 h-4" />, label: 'Nav' },
     { type: 'layout', icon: <Box className="w-4 h-4" />, label: 'Grid' },
     { type: 'carousel', icon: <Smartphone className="w-4 h-4" />, label: 'Slider' },
+    { type: 'cover', icon: <GalleryHorizontal className="w-4 h-4" />, label: 'Cover' },
     { type: 'form', icon: <FileText className="w-4 h-4" />, label: 'Form' },
     { type: 'booking', icon: <Calendar className="w-4 h-4" />, label: 'Bookings' },
     { type: 'ecommerce', icon: <ShoppingBag className="w-4 h-4" />, label: 'Store' },
@@ -65,14 +67,23 @@ const FloatingToolbar: React.FC = () => {
     >
       {/* ADD BLOCK MENU */}
       {isAddMenuOpen && (
-        <div className="glass-effect p-2 rounded-[24px] shadow-[0_20px_60px_rgba(0,0,0,0.15)] flex gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] border border-white/40 max-w-[95vw] overflow-x-auto no-scrollbar mb-2">
+        <div className="bg-white/95 p-2 rounded-[24px] shadow-[0_20px_60px_rgba(0,0,0,0.15)] flex gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] border border-slate-200 max-w-[95vw] overflow-x-auto no-scrollbar mb-2">
+          {addMenuParentId && (
+            <div className="flex items-center justify-center px-3 border-r border-slate-200/50 mr-1">
+               <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap">
+                 Adding Slide
+               </span>
+            </div>
+          )}
           {blockTemplates.map((item) => (
             <button
               key={item.type}
               onClick={(e) => {
                 e.stopPropagation();
-                addBlock(item.type as any, selectedBlockId || undefined);
-                setIsAddMenuOpen(false);
+                // If adding to a parent (like carousel), we ignore selectedBlockId for positioning "after"
+                const afterId = addMenuParentId ? undefined : (selectedBlockId || undefined);
+                addBlock(item.type as any, afterId, addMenuParentId);
+                setAddMenuOpen(false);
               }}
               className="group flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-[#FF7575]/10 transition-all active:scale-90"
             >
@@ -83,7 +94,7 @@ const FloatingToolbar: React.FC = () => {
             </button>
           ))}
           <button 
-            onClick={(e) => { e.stopPropagation(); setIsAddMenuOpen(false); }}
+            onClick={(e) => { e.stopPropagation(); setAddMenuOpen(false); }}
             className="flex items-center justify-center p-2 text-slate-300 hover:text-slate-500 rounded-lg transition-all"
           >
             <X size={16} />
@@ -93,7 +104,7 @@ const FloatingToolbar: React.FC = () => {
 
       {/* PAGE LIST MENU */}
       {isPagesMenuOpen && (
-        <div className="glass-effect w-[280px] p-3 rounded-[24px] shadow-[0_40px_100px_rgba(0,0,0,0.25)] border border-white/60 animate-in fade-in slide-in-from-bottom-4 duration-300 flex flex-col gap-3 mb-2">
+        <div className="bg-white w-[280px] p-3 rounded-[24px] shadow-[0_40px_100px_rgba(0,0,0,0.25)] border border-slate-200 animate-in fade-in slide-in-from-bottom-4 duration-300 flex flex-col gap-3 mb-2">
            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Pages</span>
               <button onClick={() => setIsPagesMenuOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={14} /></button>
@@ -150,7 +161,7 @@ const FloatingToolbar: React.FC = () => {
       )}
 
       {/* MAIN TOOLBAR (COMPACT) */}
-      <div className="glass-effect h-12 px-4 rounded-full shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] border border-white/60 flex items-center gap-3 animate-in slide-in-from-bottom-8 duration-700">
+      <div className="bg-white/95 h-12 px-4 rounded-full shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] border border-slate-200 flex items-center gap-3 animate-in slide-in-from-bottom-8 duration-700">
         
         {/* Left Group: Dashboard & Pages */}
         <div className="flex items-center gap-1 border-r border-slate-200/50 pr-3 mr-0">
@@ -163,7 +174,7 @@ const FloatingToolbar: React.FC = () => {
             </button>
 
             <button 
-                onClick={(e) => { e.stopPropagation(); setIsPagesMenuOpen(!isPagesMenuOpen); setIsAddMenuOpen(false); }}
+                onClick={(e) => { e.stopPropagation(); setIsPagesMenuOpen(!isPagesMenuOpen); setAddMenuOpen(false); }}
                 className={`p-2 rounded-lg transition-all flex items-center gap-2 ${isPagesMenuOpen ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-100 hover:text-[#FF7575]'}`}
                 title="Manage Pages"
             >
@@ -175,7 +186,7 @@ const FloatingToolbar: React.FC = () => {
         {/* Center: Add Block Button */}
         <div className="flex items-center">
           <button 
-            onClick={(e) => { e.stopPropagation(); setIsAddMenuOpen(!isAddMenuOpen); setIsPagesMenuOpen(false); }}
+            onClick={(e) => { e.stopPropagation(); setAddMenuOpen(!isAddMenuOpen); setIsPagesMenuOpen(false); }}
             className={`w-8 h-8 rounded-lg transition-all duration-300 flex items-center justify-center ${isAddMenuOpen ? 'bg-slate-800 text-white shadow-inner' : 'bg-[#FF7575] text-white hover:scale-110 active:scale-95 shadow-md shadow-[#FF7575]/30'}`}
             title="Add Block"
           >

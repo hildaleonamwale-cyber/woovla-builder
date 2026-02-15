@@ -5,23 +5,26 @@ import { Image as ImageIcon } from 'lucide-react';
 
 const ImageBlock: React.FC<{ block: Block }> = ({ block }) => {
   const { content, styles } = block;
-  
+
   const style: React.CSSProperties = {
     paddingTop: styles.padding?.top !== undefined ? `${styles.padding.top}px` : '0px',
     paddingBottom: styles.padding?.bottom !== undefined ? `${styles.padding.bottom}px` : '0px',
     paddingLeft: styles.padding?.left !== undefined ? `${styles.padding.left}px` : '0px',
     paddingRight: styles.padding?.right !== undefined ? `${styles.padding.right}px` : '0px',
-    width: '100%',
+    marginTop: styles.margin?.top !== undefined ? `${styles.margin.top}px` : '0px',
+    marginBottom: styles.margin?.bottom !== undefined ? `${styles.margin.bottom}px` : '0px',
+    marginLeft: styles.margin?.left !== undefined ? `${styles.margin.left}px` : '0px',
+    marginRight: styles.margin?.right !== undefined ? `${styles.margin.right}px` : '0px',
     display: 'flex',
     justifyContent: styles.textAlign === 'center' ? 'center' : styles.textAlign === 'right' ? 'flex-end' : 'flex-start',
   };
 
   const imgStyle: React.CSSProperties = {
-    borderRadius: `${styles.borderRadius || 0}px`,
+    borderRadius: styles.borderRadius ? `${styles.borderRadius}px` : '0',
     width: styles.width || '100%',
     height: styles.height || 'auto',
     aspectRatio: styles.aspectRatio || 'auto',
-    objectFit: styles.objectFit || 'cover',
+    objectFit: (styles.objectFit as React.CSSProperties['objectFit']) || 'cover',
     boxShadow: styles.shadow === 'md' ? '0 10px 15px -3px rgba(0, 0, 0, 0.1)' : 'none',
   };
 

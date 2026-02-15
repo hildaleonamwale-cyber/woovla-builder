@@ -3,9 +3,10 @@ import React from 'react';
 import { useStore } from '../../store/useStore';
 import BlockRenderer from './BlockRenderer';
 import { ArrowLeft, Menu } from 'lucide-react';
+import ContextualModal from './ContextualModal';
 
 const Canvas: React.FC = () => {
-  const { blocks, headerBlocks, footerBlocks, offCanvasBlocks, editingMode, pageSettings, setEditingMode } = useStore();
+  const { blocks, headerBlocks, footerBlocks, offCanvasBlocks, editingMode, pageSettings, setEditingMode, selectedBlockId } = useStore();
   
   // Select active blocks based on mode
   let activeBlocks = blocks;
@@ -13,7 +14,10 @@ const Canvas: React.FC = () => {
   if (editingMode === 'footer') activeBlocks = footerBlocks;
   if (editingMode === 'offcanvas') activeBlocks = offCanvasBlocks;
 
-  const sortedBlocks = [...activeBlocks].sort((a, b) => a.order - b.order);
+  // Filter for Root Blocks only (no parentId) and sort
+  const rootBlocks = activeBlocks
+    .filter(b => !b.parentId)
+    .sort((a, b) => a.order - b.order);
 
   const getCanvasBackground = () => {
     if (editingMode === 'header') return '#ffffff'; // Headers usually white/transparent
@@ -30,6 +34,11 @@ const Canvas: React.FC = () => {
     }
   };
 
+  // Calculate bottom padding: default + user setting + extra space if modal is open
+  const baseBottomPadding = 8; // rem (toolbar space)
+  const userBottomPadding = pageSettings.padding?.bottom || 0;
+  const modalBuffer = selectedBlockId ? 500 : 0; // Add 500px buffer if block selected
+
   return (
     <div 
       className="w-full max-w-none flex flex-col transition-colors duration-300 min-h-full relative"
@@ -38,8 +47,7 @@ const Canvas: React.FC = () => {
         fontFamily: pageSettings.fontFamily || 'Inter',
         paddingTop: pageSettings.padding?.top ? `${pageSettings.padding.top}px` : undefined,
         paddingRight: pageSettings.padding?.right ? `${pageSettings.padding.right}px` : undefined,
-        // Ensure bottom padding accommodates the floating toolbar (8rem) plus user setting
-        paddingBottom: pageSettings.padding?.bottom ? `calc(8rem + ${pageSettings.padding.bottom}px)` : '8rem',
+        paddingBottom: `calc(${baseBottomPadding}rem + ${userBottomPadding}px + ${modalBuffer}px)`,
         paddingLeft: pageSettings.padding?.left ? `${pageSettings.padding.left}px` : undefined,
       }}
     >
@@ -78,12 +86,12 @@ const Canvas: React.FC = () => {
       <div 
         className={editingMode === 'header' ? 'flex flex-row items-center justify-between w-full max-w-none px-4' : 'flex flex-col w-full max-w-none'}
       >
-        {sortedBlocks.map((block) => (
+        {rootBlocks.map((block) => (
           <BlockRenderer key={block.id} block={block} />
         ))}
         
         {/* Subtle Empty State Notice */}
-        {sortedBlocks.length === 0 && (
+        {rootBlocks.length === 0 && (
           <div className="flex-1 flex flex-col items-center justify-center p-12 w-full opacity-60 pointer-events-none select-none min-h-[300px]">
              <div className="text-center space-y-4">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 leading-relaxed">
@@ -96,6 +104,9 @@ const Canvas: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Contextual Modal inside Canvas to allow absolute positioning relative to content flow */}
+      {selectedBlockId && <ContextualModal />}
     </div>
   );
 };

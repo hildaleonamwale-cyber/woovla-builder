@@ -59,12 +59,15 @@ const ButtonBlock: React.FC<ButtonBlockProps> = ({ block }) => {
     borderBottomLeftRadius: activeStyles.cornerRadii?.bottomLeft !== undefined ? `${activeStyles.cornerRadii.bottomLeft}px` : (activeStyles.borderRadius ? `${activeStyles.borderRadius}px` : '8px'),
 
     // Padding controls the size of the button
-    paddingTop: activeStyles.padding?.top !== undefined ? `${activeStyles.padding.top}px` : '12px',
-    paddingBottom: activeStyles.padding?.bottom !== undefined ? `${activeStyles.padding.bottom}px` : '12px',
-    paddingLeft: activeStyles.padding?.left !== undefined ? `${activeStyles.padding.left}px` : '24px',
-    paddingRight: activeStyles.padding?.right !== undefined ? `${activeStyles.padding.right}px` : '24px',
+    paddingTop: activeStyles.padding?.top !== undefined ? `${activeStyles.padding.top}px` : '10px',
+    paddingBottom: activeStyles.padding?.bottom !== undefined ? `${activeStyles.padding.bottom}px` : '10px',
+    paddingLeft: activeStyles.padding?.left !== undefined ? `${activeStyles.padding.left}px` : '20px',
+    paddingRight: activeStyles.padding?.right !== undefined ? `${activeStyles.padding.right}px` : '20px',
 
-    display: 'inline-block',
+    width: activeStyles.width === '100%' ? '100%' : 'auto',
+    display: activeStyles.width === '100%' ? 'block' : 'inline-block',
+    textAlign: 'center',
+
     transition: 'all 0.2s ease',
     boxShadow: activeStyles.shadow === 'md' ? '0 4px 6px -1px rgb(0 0 0 / 0.1)' : 'none',
     border: 'none',
@@ -78,7 +81,7 @@ const ButtonBlock: React.FC<ButtonBlockProps> = ({ block }) => {
   if (hasLink) {
       return (
         <div style={wrapperStyle} className="w-full">
-            <a href={content.link} style={buttonStyle} className="active:scale-95 inline-block" onClick={(e) => e.preventDefault()}>
+            <a href={content.link} style={buttonStyle} className="active:scale-95" onClick={(e) => e.preventDefault()}>
                 {content.text || 'Button'}
             </a>
         </div>
