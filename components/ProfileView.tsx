@@ -4,7 +4,7 @@ import { useStore } from '../store/useStore';
 import { 
   Instagram, Globe, MapPin, Linkedin, Feather, Share2, 
   Edit2, Plus, ShoppingBag, Calendar, Clock, FileText, 
-  Play, CheckCircle2, Mail, Users, ArrowRight, Verified, X, Sparkles, Tag, Bolt, Home, Scissors, Gift, Ticket, ClipboardList, Video,
+  Play, CheckCircle2, Mail, Users, ArrowRight, Verified, X, Sparkles, Tag, Bolt, Home, Scissors, Gift, Ticket, ClipboardList, Video, Trash2,
   MessageCircle, Twitter, Map, Send, Link, Star, MessageSquare, Bell, History
 } from 'lucide-react';
 import CardEditorModal from './CardEditorModal';
@@ -282,35 +282,15 @@ const NewsletterModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ i
     );
 };
 
-// Dummy Data for Updates
-const PROFILE_UPDATES = [
-    { 
-        id: 1, 
-        title: "Fall Collection Drop", 
-        date: "2 days ago", 
-        content: "Our highly anticipated Fall collection is finally here. We've added 15 new presets and 3 masterclasses designed to elevate your creative workflow.",
-        image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=500&auto=format&fit=crop"
-    },
-    { 
-        id: 2, 
-        title: "Community Milestone", 
-        date: "1 week ago", 
-        content: "We just hit 10,000 members in our creative community! Thank you all for the incredible support. We are planning a special event to celebrate.",
-        image: null 
-    },
-    { 
-        id: 3, 
-        title: "Studio Relocation", 
-        date: "2 weeks ago", 
-        content: "Exciting news! We are moving our main studio to a larger space in downtown. Expect better content and faster production times.",
-        image: null 
-    }
-];
-
+// Dummy Data for Updates - Removed as it is now in the store
 const ProfileView: React.FC = () => {
-  const { profile, setStoryIndex, setHighlightId, setEditingHighlightId, editingHighlightId, addHighlight, view } = useStore();
+  const { profile, setStoryIndex, setHighlightId, setEditingHighlightId, editingHighlightId, addHighlight, view, updateUpdate, removeUpdate, updateProfile } = useStore();
   const [isAdding, setIsAdding] = useState(false);
   const [isNewsletterOpen, setIsNewsletterOpen] = useState(false);
+  
+  // Editing state for Updates/Info
+  const [editingUpdateId, setEditingUpdateId] = useState<string | null>(null);
+  const [isEditingInfo, setIsEditingInfo] = useState(false);
   
   // Updated Tab State
   const [activeTab, setActiveTab] = useState<'offers' | 'updates' | 'info'>('offers');
@@ -422,12 +402,21 @@ const ProfileView: React.FC = () => {
       <div className="px-6 pt-16 pb-8 flex flex-col items-center text-center relative z-10">
             
             {/* Avatar Ring */}
-            <div className="mb-6 group cursor-pointer relative" onClick={() => setStoryIndex(0)}>
-                <div className="w-28 h-28 rounded-full p-[3px] bg-gradient-to-tr from-[#FF7575] to-[#ffaeb6] shadow-xl">
+            <div className="mb-6 group cursor-pointer relative">
+                <div className="w-28 h-28 rounded-full p-[3px] bg-gradient-to-tr from-[#FF7575] to-[#ffaeb6] shadow-xl" onClick={() => setStoryIndex(0)}>
                     <div className="w-full h-full rounded-full border-4 border-white overflow-hidden bg-white">
                         <img src={profile.avatar} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={profile.name} />
                     </div>
                 </div>
+                {!isPreview && (
+                    <button 
+                        onClick={() => setView('admin')}
+                        className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-white shadow-lg border border-slate-100 flex items-center justify-center text-[#FF7575] opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                        title="Edit Stories"
+                    >
+                        <Edit2 size={14} />
+                    </button>
+                )}
                 <div className="absolute bottom-1 right-1 bg-white text-slate-900 rounded-full p-1.5 shadow-md border border-slate-100">
                     {profile.badges.some(b => b.label === 'Verified') ? <Verified size={14} className="text-blue-500" fill="currentColor" /> : <Sparkles size={14} className="text-[#FF7575]" />}
                 </div>
@@ -626,8 +615,44 @@ const ProfileView: React.FC = () => {
       {/* UPDATES TAB */}
       {activeTab === 'updates' && (
         <div className="px-6 pb-20 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 relative z-10">
-            {PROFILE_UPDATES.map(update => (
-                <div key={update.id} className="bg-white border border-slate-100 p-6 rounded-[32px] shadow-sm hover:shadow-md transition-all">
+            {!isPreview && (
+                <button 
+                    onClick={() => {
+                        const newId = `u_${Date.now()}`;
+                        useStore.getState().addUpdate({
+                            id: newId,
+                            title: 'New Update',
+                            date: 'Just now',
+                            content: 'Tap to edit this update...',
+                            image: null
+                        });
+                        setEditingUpdateId(newId);
+                    }}
+                    className="w-full py-4 border-2 border-dashed border-slate-200 rounded-[32px] flex items-center justify-center gap-2 text-slate-400 hover:text-[#FF7575] hover:border-[#FF7575] hover:bg-[#FF7575]/5 transition-all group"
+                >
+                    <Plus size={16} />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Post New Update</span>
+                </button>
+            )}
+
+            {profile.updates.map(update => (
+                <div key={update.id} className="bg-white border border-slate-100 p-6 rounded-[32px] shadow-sm hover:shadow-md transition-all relative group">
+                    {!isPreview && (
+                        <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button 
+                                onClick={() => setEditingUpdateId(update.id)}
+                                className="p-2 bg-slate-50 text-slate-400 hover:text-[#FF7575] rounded-full"
+                            >
+                                <Edit2 size={14} />
+                            </button>
+                            <button 
+                                onClick={() => removeUpdate(update.id)}
+                                className="p-2 bg-slate-50 text-slate-400 hover:text-red-500 rounded-full"
+                            >
+                                <Trash2 size={14} />
+                            </button>
+                        </div>
+                    )}
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-[#FFF1F1] flex items-center justify-center text-[#FF7575] border border-[#FFE4E4]">
@@ -654,18 +679,23 @@ const ProfileView: React.FC = () => {
       {activeTab === 'info' && (
         <div className="px-6 pb-20 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 relative z-10">
             {/* About / History */}
-            <div className="bg-white border border-slate-100 p-6 rounded-[32px] shadow-sm">
+            <div className="bg-white border border-slate-100 p-6 rounded-[32px] shadow-sm relative group">
+                {!isPreview && (
+                    <button 
+                        onClick={() => setIsEditingInfo(true)}
+                        className="absolute top-4 right-4 p-2 bg-slate-50 text-slate-400 hover:text-[#FF7575] rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                        <Edit2 size={14} />
+                    </button>
+                )}
                 <div className="flex items-center gap-3 mb-4">
                     <div className="p-2 bg-slate-50 rounded-xl text-slate-400">
                         <History size={20} />
                     </div>
-                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-800">Our Story</h3>
+                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-800">{profile.info.storyTitle}</h3>
                 </div>
-                <p className="text-xs font-medium text-slate-600 leading-loose">
-                    Founded in 2023, {profile.name} began with a simple mission: to create digital experiences that matter. 
-                    What started in a small studio has grown into a vibrant community of creators and innovators.
-                    We believe in the power of simplicity, the beauty of function, and the importance of connection.
-                    Every product we launch is a testament to our dedication to quality and design.
+                <p className="text-xs font-medium text-slate-600 leading-loose whitespace-pre-wrap">
+                    {profile.info.storyContent}
                 </p>
             </div>
 
@@ -717,7 +747,88 @@ const ProfileView: React.FC = () => {
           </div>
       )}
 
-      {editingHighlightId && <CardEditorModal />}
+      {/* Update Editor Modal */}
+      {editingUpdateId && (
+          <div className="fixed inset-0 z-[600] bg-black/60 flex items-center justify-center p-6 animate-in fade-in">
+              <div className="bg-white w-full max-w-sm rounded-[40px] overflow-hidden shadow-2xl animate-in zoom-in-95 flex flex-col max-h-[80vh]">
+                  <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                      <h3 className="text-xl font-black text-slate-800 uppercase">Edit Update</h3>
+                      <button onClick={() => setEditingUpdateId(null)} className="w-10 h-10 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center hover:bg-slate-300"><X size={20} /></button>
+                  </div>
+                  <div className="p-8 space-y-6 overflow-y-auto no-scrollbar">
+                      <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Title</label>
+                          <input 
+                            value={profile.updates.find(u => u.id === editingUpdateId)?.title || ''}
+                            onChange={(e) => updateUpdate(editingUpdateId, { title: e.target.value })}
+                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-slate-800 outline-none focus:bg-white focus:border-[#FF7575] transition-all"
+                          />
+                      </div>
+                      <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Date/Time</label>
+                          <input 
+                            value={profile.updates.find(u => u.id === editingUpdateId)?.date || ''}
+                            onChange={(e) => updateUpdate(editingUpdateId, { date: e.target.value })}
+                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-xs font-bold text-slate-500 outline-none focus:bg-white focus:border-[#FF7575] transition-all"
+                          />
+                      </div>
+                      <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Image URL</label>
+                          <input 
+                            value={profile.updates.find(u => u.id === editingUpdateId)?.image || ''}
+                            onChange={(e) => updateUpdate(editingUpdateId, { image: e.target.value })}
+                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-xs font-mono text-slate-400 outline-none focus:bg-white focus:border-[#FF7575] transition-all"
+                            placeholder="https://..."
+                          />
+                      </div>
+                      <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Content</label>
+                          <textarea 
+                            value={profile.updates.find(u => u.id === editingUpdateId)?.content || ''}
+                            onChange={(e) => updateUpdate(editingUpdateId, { content: e.target.value })}
+                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-xs font-medium text-slate-600 outline-none focus:bg-white focus:border-[#FF7575] transition-all min-h-[150px] resize-none"
+                          />
+                      </div>
+                  </div>
+                  <div className="p-6 bg-slate-50 border-t border-slate-100">
+                      <button onClick={() => setEditingUpdateId(null)} className="w-full py-4 bg-black text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl">Save Update</button>
+                  </div>
+              </div>
+          </div>
+      )}
+
+      {/* Info Editor Modal */}
+      {isEditingInfo && (
+          <div className="fixed inset-0 z-[600] bg-black/60 flex items-center justify-center p-6 animate-in fade-in">
+              <div className="bg-white w-full max-w-sm rounded-[40px] overflow-hidden shadow-2xl animate-in zoom-in-95 flex flex-col max-h-[80vh]">
+                  <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                      <h3 className="text-xl font-black text-slate-800 uppercase">Edit Info</h3>
+                      <button onClick={() => setIsEditingInfo(false)} className="w-10 h-10 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center hover:bg-slate-300"><X size={20} /></button>
+                  </div>
+                  <div className="p-8 space-y-6 overflow-y-auto no-scrollbar">
+                      <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Section Title</label>
+                          <input 
+                            value={profile.info.storyTitle}
+                            onChange={(e) => updateProfile({ info: { ...profile.info, storyTitle: e.target.value } })}
+                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-slate-800 outline-none focus:bg-white focus:border-[#FF7575] transition-all"
+                          />
+                      </div>
+                      <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Story Content</label>
+                          <textarea 
+                            value={profile.info.storyContent}
+                            onChange={(e) => updateProfile({ info: { ...profile.info, storyContent: e.target.value } })}
+                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-xs font-medium text-slate-600 outline-none focus:bg-white focus:border-[#FF7575] transition-all min-h-[250px] resize-none"
+                          />
+                      </div>
+                  </div>
+                  <div className="p-6 bg-slate-50 border-t border-slate-100">
+                      <button onClick={() => setIsEditingInfo(false)} className="w-full py-4 bg-black text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl">Save Info</button>
+                  </div>
+              </div>
+          </div>
+      )}
 
       <div className="mt-8 flex flex-col items-center">
           <div className="w-16 h-1.5 bg-slate-100 rounded-full mb-8" />

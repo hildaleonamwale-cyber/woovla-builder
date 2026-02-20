@@ -4,12 +4,13 @@ import { useStore } from '../store/useStore';
 import { 
   X, Check, Trash2, Palette, RotateCcw, Eye, Type, 
   Image as ImageIcon, List, AlignLeft, Star, Plus, Database, RefreshCw, Layers, Droplet,
-  Layout, Smartphone
+  Layout, Smartphone, ClipboardList
 } from 'lucide-react';
+import FormBuilder from './FormBuilder';
 
 const CardEditorModal: React.FC = () => {
   const { 
-      profile, services, products, events, properties, forms,
+      profile, services, products, events, properties, forms, updateForm, addForm,
       editingHighlightId, setEditingHighlightId, updateHighlight, removeHighlight, activeHighlightId 
   } = useStore();
   const [activeTab, setActiveTab] = useState<'content' | 'design'>('content');
@@ -22,6 +23,7 @@ const CardEditorModal: React.FC = () => {
   const modalStyles = modalData.styles || {};
   
   const isEditingOpenModal = activeHighlightId === editingHighlightId;
+  const linkedForm = forms.find(f => f.id === modalData.formId);
 
   // Generic updaters
   const handleCardStyleUpdate = (updates: any) => {
@@ -177,6 +179,27 @@ const CardEditorModal: React.FC = () => {
                                                 <RefreshCw size={10} /> Re-Sync
                                             </button>
                                         )}
+                                        {entityType === 'form' && (
+                                            <button 
+                                                onClick={() => {
+                                                    const newFormId = `form_${Date.now()}`;
+                                                    addForm({
+                                                        id: newFormId,
+                                                        title: 'New Custom Form',
+                                                        fields: [
+                                                            { id: 'f1', label: 'Full Name', type: 'text', placeholder: 'Enter your name' },
+                                                            { id: 'f2', label: 'Email Address', type: 'email', placeholder: 'hello@example.com' }
+                                                        ],
+                                                        buttonText: 'Submit Request',
+                                                        confirmationMessage: 'Thank you! We will get back to you soon.'
+                                                    });
+                                                    handleModalDataUpdate({ formId: newFormId });
+                                                }}
+                                                className="text-[9px] font-bold text-[#FF7575] uppercase hover:underline"
+                                            >
+                                                + Create New Form
+                                            </button>
+                                        )}
                                     </div>
                                     <select 
                                         className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#FF7575]/20"
@@ -268,9 +291,9 @@ const CardEditorModal: React.FC = () => {
                               />
                           <input 
                                   type="text"
-                                  value={highlight.title}
+                                  value={modalData.title || highlight.title}
                                   placeholder="Main Title"
-                                  onChange={(e) => handleMainUpdate({ title: e.target.value })}
+                                  onChange={(e) => handleModalDataUpdate({ title: e.target.value })}
                                   className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-black text-slate-900 outline-none focus:bg-white focus:border-[#FF7575] transition-all"
                               />
                           <textarea 
@@ -278,6 +301,13 @@ const CardEditorModal: React.FC = () => {
                                   placeholder="Detailed Description (Modal Only)"
                                   onChange={(e) => handleModalDataUpdate({ description: e.target.value })}
                                   className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-xs font-medium text-slate-600 outline-none focus:bg-white focus:border-[#FF7575] transition-all min-h-[120px]"
+                              />
+                          <input 
+                                  type="text"
+                                  value={modalData.buttonText || highlight.buttonText}
+                                  placeholder="Button Text"
+                                  onChange={(e) => handleModalDataUpdate({ buttonText: e.target.value })}
+                                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-xs font-bold text-slate-800 outline-none focus:bg-white focus:border-[#FF7575] transition-all"
                               />
                       </div>
                   </div>
@@ -296,6 +326,24 @@ const CardEditorModal: React.FC = () => {
                               className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-xs font-bold text-slate-800 outline-none focus:bg-white focus:border-[#FF7575] transition-all min-h-[80px]"
                       />
                   </div>
+
+                  {highlight.type === 'form' && (
+                      <div className="space-y-4 pt-4 border-t border-slate-100">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 ml-1">
+                              <ClipboardList size={12} /> Form Builder
+                          </label>
+                          {linkedForm ? (
+                              <FormBuilder 
+                                  form={linkedForm} 
+                                  onChange={(updates) => updateForm(linkedForm.id, updates)} 
+                              />
+                          ) : (
+                              <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center">
+                                  <p className="text-[10px] font-bold text-slate-400 uppercase">Select a form source above to start building</p>
+                              </div>
+                          )}
+                      </div>
+                  )}
               </div>
           )}
 
@@ -491,7 +539,7 @@ const CardEditorModal: React.FC = () => {
   );
 
   return (
-    <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-slate-900/40 animate-in fade-in duration-300 font-inter">
+    <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-slate-900/40 animate-in fade-in duration-300 font-inter">
       <div 
         className="bg-white w-full max-w-sm rounded-[40px] shadow-[0_40px_100px_rgba(0,0,0,0.2)] border border-slate-200 overflow-hidden flex flex-col animate-in zoom-in-95 h-[85vh] sm:h-[700px]"
         onClick={(e) => e.stopPropagation()}

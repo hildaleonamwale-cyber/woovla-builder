@@ -20,7 +20,7 @@ const ActionModal: React.FC = () => {
   const { 
       profile, activeHighlightId, setHighlightId,
       services, products, events, properties, forms,
-      view, setEditingHighlightId
+      view, setEditingHighlightId, addSubmission
   } = useStore();
   
   const highlight = profile.highlights.find(h => h.id === activeHighlightId);
@@ -30,6 +30,7 @@ const ActionModal: React.FC = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formStep, setFormStep] = useState(1);
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [formData, setFormData] = useState<Record<string, any>>({});
   
   // Booking Selection State
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
@@ -48,15 +49,15 @@ const ActionModal: React.FC = () => {
   if (highlight.type === 'form' && modalData.formId) linkedEntity = forms.find(f => f.id === modalData.formId);
 
   // Unified Data Accessors
-  const displayTitle = highlight.title || linkedEntity?.title;
+  const displayTitle = modalData.title ?? highlight.title ?? linkedEntity?.title ?? '';
   // Use specific modal description if available, otherwise fallback to card subtitle/description
-  const displaySubtitle = modalData.description || highlight.subtitle || linkedEntity?.description;
-  const displayPrice = highlight.price || linkedEntity?.price;
+  const displaySubtitle = modalData.description ?? highlight.subtitle ?? linkedEntity?.description ?? '';
+  const displayPrice = highlight.price ?? linkedEntity?.price;
   
   // Use specific demo image if none present, or override for this specific request context if needed
   const isDefaultImage = highlight.image?.includes('unsplash') || !highlight.image;
   
-  let rawSlides = (modalData.slides && modalData.slides.length > 0 && modalData.slides[0] !== '') 
+  let rawSlides = (modalData.slides && modalData.slides.length > 0) 
         ? modalData.slides 
         : (linkedEntity?.images || (linkedEntity?.image ? [linkedEntity.image] : [highlight.image]));
 
@@ -69,25 +70,12 @@ const ActionModal: React.FC = () => {
   const displayFeatures = (modalData.features && modalData.features.length > 0) ? modalData.features : (linkedEntity?.features || []);
   const displayButtonText = modalData.buttonText || linkedEntity?.buttonText || highlight.buttonText;
   
-  // Style overrides - prioritize modal specific styles, fallback to card styles
+  // Style overrides - prioritize modal specific styles
   const modalStyles = highlight.modalData?.styles || {};
   
-  // Fallback chain for button color
-  let btnColor = modalStyles.buttonColor;
-  if (!btnColor) {
-      // If no specific modal button color, use card button color, 
-      // but ensure it's not white-on-white
-      const cardBtnColor = highlight.styles?.buttonColor;
-      if (cardBtnColor && (cardBtnColor.toLowerCase() === '#ffffff' || cardBtnColor.toLowerCase() === '#fff' || cardBtnColor.toLowerCase() === 'white')) {
-          btnColor = '#000000'; // Default black for visibility
-      } else {
-          btnColor = cardBtnColor || '#000000';
-      }
-  }
-  
-  const btnTextColor = modalStyles.buttonTextColor || highlight.styles?.buttonTextColor || '#ffffff';
-  
-  // Modal Background
+  // Independent Modal Styles (Strict Decoupling)
+  const btnColor = modalStyles.buttonColor || '#000000';
+  const btnTextColor = modalStyles.buttonTextColor || '#ffffff';
   const modalBg = modalStyles.backgroundColor || '#ffffff';
   const modalText = modalStyles.textColor || '#000000';
 
@@ -143,9 +131,22 @@ const ActionModal: React.FC = () => {
       setFormStep(1); // Reset step
   };
 
+   const handleFormSubmit = () => {
+      addSubmission({
+          id: `sub_${Date.now()}`,
+          formId: linkedEntity?.id || 'custom',
+          formTitle: linkedEntity?.title || highlight.title,
+          data: formData,
+          date: new Date().toLocaleDateString(),
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+      setFormSubmitted(true);
+   };
+
   const renderForm = () => {
       // SUCCESS STATE
       if (formSubmitted) {
+          const confirmationMsg = linkedEntity?.confirmationMessage || modalData.confirmationMessage || "We've received your request and will be in touch shortly.";
           return (
               <div className="flex flex-col items-center justify-center text-center h-full py-10 animate-in zoom-in-95">
                   <div className="w-16 h-16 bg-green-50 text-green-600 rounded-full flex items-center justify-center mb-6">
@@ -153,7 +154,7 @@ const ActionModal: React.FC = () => {
                   </div>
                   <h3 className="text-2xl font-bold text-slate-900 mb-2">Confirmed</h3>
                   <p className="text-sm text-slate-500 max-w-[200px] leading-relaxed">
-                      We've received your request and will be in touch shortly.
+                      {confirmationMsg}
                   </p>
                   <button onClick={() => setHighlightId(null)} className="mt-8 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-800">
                       Close
@@ -303,8 +304,18 @@ const ActionModal: React.FC = () => {
                    </div>
                    
                    <div className="space-y-3 max-h-[300px] overflow-y-auto no-scrollbar pr-1">
-                       <input placeholder="Full Name" className="w-full bg-slate-50 border-none rounded-xl px-5 py-4 text-xs font-bold text-slate-800 outline-none focus:bg-white focus:ring-1 focus:ring-slate-200" />
-                       <input placeholder="Email Address" className="w-full bg-slate-50 border-none rounded-xl px-5 py-4 text-xs font-bold text-slate-800 outline-none focus:bg-white focus:ring-1 focus:ring-slate-200" />
+                       <input 
+                            placeholder="Full Name" 
+                            value={formData.name || ''}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            className="w-full bg-slate-50 border-none rounded-xl px-5 py-4 text-xs font-bold text-slate-800 outline-none focus:bg-white focus:ring-1 focus:ring-slate-200" 
+                       />
+                       <input 
+                            placeholder="Email Address" 
+                            value={formData.email || ''}
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            className="w-full bg-slate-50 border-none rounded-xl px-5 py-4 text-xs font-bold text-slate-800 outline-none focus:bg-white focus:ring-1 focus:ring-slate-200" 
+                       />
                        
                        {formFields.map((field: any, idx: number) => {
                            if (field.type === 'select') {
@@ -312,7 +323,11 @@ const ActionModal: React.FC = () => {
                                    <div key={idx} className="space-y-1">
                                         <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">{field.label}</label>
                                         <div className="relative">
-                                            <select className="w-full bg-slate-50 border-none rounded-xl px-5 py-4 text-xs font-bold text-slate-800 outline-none focus:bg-white focus:ring-1 focus:ring-slate-200 appearance-none">
+                                            <select 
+                                                value={formData[field.id] || ''}
+                                                onChange={(e) => setFormData({ ...formData, [field.id]: e.target.value })}
+                                                className="w-full bg-slate-50 border-none rounded-xl px-5 py-4 text-xs font-bold text-slate-800 outline-none focus:bg-white focus:ring-1 focus:ring-slate-200 appearance-none"
+                                            >
                                                 <option value="">Select an option...</option>
                                                 {field.options?.map((opt: string, i: number) => (
                                                     <option key={i} value={opt}>{opt}</option>
@@ -331,6 +346,8 @@ const ActionModal: React.FC = () => {
                                         <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">{field.label}</label>
                                         <textarea 
                                             placeholder={field.placeholder} 
+                                            value={formData[field.id] || ''}
+                                            onChange={(e) => setFormData({ ...formData, [field.id]: e.target.value })}
                                             className="w-full bg-slate-50 border-none rounded-xl px-5 py-4 text-xs font-bold text-slate-800 outline-none focus:bg-white focus:ring-1 focus:ring-slate-200 min-h-[80px] resize-none" 
                                         />
                                    </div>
@@ -354,7 +371,7 @@ const ActionModal: React.FC = () => {
                             Back
                         </button>
                         <button 
-                            onClick={() => setFormSubmitted(true)}
+                            onClick={handleFormSubmit}
                             className="flex-1 py-4 rounded-2xl bg-[#A8683E] text-white text-[10px] font-black uppercase tracking-widest shadow-xl"
                         >
                             {linkedEntity?.buttonText || 'Submit'}
@@ -411,16 +428,18 @@ const ActionModal: React.FC = () => {
         </button>
 
         {/* EDIT BUTTON (Admin Only) */}
-        <button 
-            onClick={(e) => {
-                e.stopPropagation();
-                setEditingHighlightId(highlight.id);
-            }}
-            className="absolute top-4 left-4 z-50 w-8 h-8 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/40 transition-colors border border-white/10"
-            title="Edit this card"
-        >
-            <Edit2 size={14} />
-        </button>
+        {view !== 'preview' && (
+            <button 
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingHighlightId(highlight.id);
+                }}
+                className="absolute top-4 left-4 z-50 w-8 h-8 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/40 transition-colors border border-white/10"
+                title="Edit Modal Settings"
+            >
+                <Edit2 size={14} />
+            </button>
+        )}
 
         {/* 1. IMAGE SECTION */}
         <div className="relative w-full aspect-[4/3] bg-slate-100 shrink-0 group rounded-t-[40px] overflow-hidden">

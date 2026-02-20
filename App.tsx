@@ -4,12 +4,13 @@ import ProfileView from './components/ProfileView';
 import ProfileEditor from './components/ProfileEditor';
 import StoryViewer from './components/StoryViewer';
 import ActionModal from './components/ActionModal';
+import CardEditorModal from './components/CardEditorModal';
 import Dashboard from './components/Dashboard/Dashboard';
 import Onboarding from './components/Onboarding/Onboarding';
 import { Eye, EyeOff } from 'lucide-react';
 
 const App: React.FC = () => {
-  const { view, setView, activeStoryIndex, activeHighlightId, hasCompletedOnboarding } = useStore();
+  const { view, setView, activeStoryIndex, activeHighlightId, editingHighlightId, hasCompletedOnboarding } = useStore();
 
   if (!hasCompletedOnboarding) {
     return <Onboarding />;
@@ -32,6 +33,7 @@ const App: React.FC = () => {
       {/* Global Overlays */}
       {activeStoryIndex !== null && <StoryViewer />}
       {activeHighlightId !== null && <ActionModal />}
+      {editingHighlightId !== null && <CardEditorModal />}
       
       {/* Navigation Switcher Button (Float) */}
       <div className="fixed bottom-6 right-6 z-[200] flex flex-col gap-3 items-end">

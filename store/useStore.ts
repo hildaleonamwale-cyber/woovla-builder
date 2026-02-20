@@ -13,11 +13,17 @@ interface Actions {
   setStoryIndex: (index: number | null) => void;
   setHighlightId: (id: string | null) => void;
   setEditingHighlightId: (id: string | null) => void;
+  setEditingModalId: (id: string | null) => void;
   updateHighlight: (id: string, updates: Partial<Highlight>) => void;
   addHighlight: (highlight: Highlight) => void;
   removeHighlight: (id: string) => void;
   addStory: (slide: StorySlide) => void;
   removeStory: (id: string) => void;
+  
+  // Updates
+  addUpdate: (update: Update) => void;
+  updateUpdate: (id: string, updates: Partial<Update>) => void;
+  removeUpdate: (id: string) => void;
   
   // Builder Actions
   setViewport: (mode: ViewportMode) => void;
@@ -54,6 +60,8 @@ interface Actions {
   addForm: (form: FormEntity) => void;
   updateForm: (id: string, updates: Partial<FormEntity>) => void;
   deleteForm: (id: string) => void;
+
+  addSubmission: (submission: any) => void;
 
   // History & Pages
   undo: () => void;
@@ -193,6 +201,36 @@ const INITIAL_PROFILE: Profile = {
   stories: [
     { id: 's1', type: 'image', content: 'https://images.unsplash.com/photo-1616469829941-c7200edec809?q=80&w=1000&auto=format&fit=crop', title: 'Welcome' },
   ],
+  updates: [
+    { 
+        id: 'u1', 
+        title: "Fall Collection Drop", 
+        date: "2 days ago", 
+        content: "Our highly anticipated Fall collection is finally here. We've added 15 new presets and 3 masterclasses designed to elevate your creative workflow.",
+        image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=500&auto=format&fit=crop"
+    },
+    { 
+        id: 'u2', 
+        title: "Community Milestone", 
+        date: "1 week ago", 
+        content: "We just hit 10,000 members in our creative community! Thank you all for the incredible support. We are planning a special event to celebrate.",
+        image: null 
+    },
+    { 
+        id: 'u3', 
+        title: "Studio Relocation", 
+        date: "2 weeks ago", 
+        content: "Exciting news! We are moving our main studio to a larger space in downtown. Expect better content and faster production times.",
+        image: null 
+    }
+  ],
+  info: {
+    storyTitle: 'Our Story',
+    storyContent: `Founded in 2023, Woovla Official began with a simple mission: to create digital experiences that matter. 
+What started in a small studio has grown into a vibrant community of creators and innovators.
+We believe in the power of simplicity, the beauty of function, and the importance of connection.
+Every product we launch is a testament to our dedication to quality and design.`
+  },
   highlights: [
       // 1. PRODUCT - Default Variant
       {
@@ -385,10 +423,12 @@ export const useStore = create<AppState & Actions>((set, get) => ({
   properties: INITIAL_PROPERTIES,
   forms: INITIAL_FORMS,
   payouts: INITIAL_PAYOUTS,
+  submissions: [],
 
   activeStoryIndex: null,
   activeHighlightId: null,
   editingHighlightId: null,
+  editingModalId: null,
   
   viewport: 'mobile',
   blocks: [],
@@ -420,6 +460,7 @@ export const useStore = create<AppState & Actions>((set, get) => ({
   setStoryIndex: (index) => set({ activeStoryIndex: index }),
   setHighlightId: (id) => set({ activeHighlightId: id }),
   setEditingHighlightId: (id) => set({ editingHighlightId: id }),
+  setEditingModalId: (id) => set({ editingModalId: id }),
   
   updateHighlight: (id, updates) => set((state) => ({
     profile: {
@@ -432,6 +473,15 @@ export const useStore = create<AppState & Actions>((set, get) => ({
   removeHighlight: (id) => set((state) => ({ profile: { ...state.profile, highlights: state.profile.highlights.filter(h => h.id !== id) } })),
   addStory: (slide) => set((state) => ({ profile: { ...state.profile, stories: [...state.profile.stories, slide] } })),
   removeStory: (id) => set((state) => ({ profile: { ...state.profile, stories: state.profile.stories.filter(s => s.id !== id) } })),
+
+  addUpdate: (update) => set((state) => ({ profile: { ...state.profile, updates: [update, ...state.profile.updates] } })),
+  updateUpdate: (id, updates) => set((state) => ({
+    profile: {
+      ...state.profile,
+      updates: state.profile.updates.map(u => u.id === id ? { ...u, ...updates } : u)
+    }
+  })),
+  removeUpdate: (id) => set((state) => ({ profile: { ...state.profile, updates: state.profile.updates.filter(u => u.id !== id) } })),
 
   setViewport: (viewport) => set({ viewport }),
   selectBlock: (selectedBlockId) => set({ selectedBlockId }),
@@ -466,6 +516,8 @@ export const useStore = create<AppState & Actions>((set, get) => ({
   addForm: (form) => set((state) => ({ forms: [...state.forms, form] })),
   updateForm: (id, updates) => set((state) => ({ forms: state.forms.map(f => f.id === id ? { ...f, ...updates } : f) })),
   deleteForm: (id) => set((state) => ({ forms: state.forms.filter(f => f.id !== id) })),
+
+  addSubmission: (submission) => set((state) => ({ submissions: [submission, ...state.submissions] })),
 
   undo: () => {},
   redo: () => {},

@@ -152,6 +152,7 @@ export interface Payout {
 // ---------------------------
 
 export interface HighlightModalData {
+    title?: string;
     tagline?: string;
     description?: string; // New: Longer description for modal
     slides?: string[];
@@ -206,6 +207,19 @@ export interface Highlight {
   modalData?: HighlightModalData;
 }
 
+export interface Update {
+  id: string;
+  title: string;
+  date: string;
+  content: string;
+  image?: string | null;
+}
+
+export interface InfoSection {
+  storyTitle: string;
+  storyContent: string;
+}
+
 export interface Profile {
   id: string;
   name: string;
@@ -216,6 +230,8 @@ export interface Profile {
   badges: Badge[];
   links: LinkedProfile[];
   stories: StorySlide[];
+  updates: Update[];
+  info: InfoSection;
   pinnedMessage?: {
     title: string;
     description: string;
@@ -317,6 +333,7 @@ export interface AppState {
   activeStoryIndex: number | null;
   activeHighlightId: string | null;
   editingHighlightId: string | null;
+  editingModalId: string | null;
   
   // Data State
   services: Service[];
@@ -325,6 +342,7 @@ export interface AppState {
   properties: Property[];
   forms: FormEntity[];
   payouts: Payout[];
+  submissions: any[];
   
   // Builder State
   viewport: ViewportMode;
